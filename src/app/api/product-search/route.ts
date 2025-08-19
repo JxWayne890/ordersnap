@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchProducts } from "@/lib/shopify";
+import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
 import Fuse from "fuse.js";
 
 type Body = {
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     const { storeDomain, adminToken, queries } = (await req.json()) as Body;
     const products = await fetchProducts({ storeDomain, adminToken });
 
-    const fuse = new Fuse(products, {
+    const fuse = new Fuse<ShopifyProduct>(products, {
       keys: ["title"],
       threshold: 0.4, // fuzzy
       includeScore: true,
@@ -36,7 +36,8 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ matches });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 400 });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "Unknown error";
+    return NextResponse.json({ error: msg }, { status: 400 });
   }
 }

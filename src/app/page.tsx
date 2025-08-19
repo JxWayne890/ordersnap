@@ -64,8 +64,9 @@ export default function Home() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Product search failed");
       setMatches(data.matches);
-    } catch (e: any) {
-      setToast({ type: "error", msg: e.message });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Search failed";
+      setToast({ type: "error", msg });
     } finally {
       setLoading(null);
     }
@@ -121,8 +122,9 @@ export default function Home() {
       if (!res.ok) throw new Error(data.error || "Draft order creation failed");
 
       setToast({ type: "success", msg: `Draft #${data.draftOrderId} created and invoice sent.` });
-    } catch (e: any) {
-      setToast({ type: "error", msg: e.message });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Draft order failed";
+      setToast({ type: "error", msg });
     } finally {
       setLoading(null);
     }

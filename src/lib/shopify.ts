@@ -1,6 +1,27 @@
 // src/lib/shopify.ts
 export type ShopifyCreds = { storeDomain: string; adminToken: string };
 
+export type DraftOrderLineItem = {
+  variant_id: number;
+  quantity: number;
+  price?: number;
+};
+
+export type DraftOrderPayload = {
+  draft_order: {
+    email?: string;
+    note?: string;
+    use_customer_default_address?: boolean;
+    line_items: DraftOrderLineItem[];
+  };
+};
+
+export type ShopifyProduct = {
+  id: number;
+  title: string;
+  variants: Array<{ id: number; title: string; price: string }>;
+};
+
 const base = ({ storeDomain }: ShopifyCreds) =>
   `https://${storeDomain}/admin/api/2024-10`;
 
@@ -9,23 +30,22 @@ const headers = ({ adminToken }: ShopifyCreds) => ({
   "X-Shopify-Access-Token": adminToken,
 });
 
-export async function fetchProducts(creds: ShopifyCreds, pageLimit = 250) {
+export async function fetchProducts(
+  creds: ShopifyCreds,
+  pageLimit = 250
+): Promise<ShopifyProduct[]> {
   const res = await fetch(`${base(creds)}/products.json?limit=${pageLimit}`, {
     headers: headers(creds),
     cache: "no-store",
   });
   if (!res.ok) throw new Error(`Product fetch failed: ${res.statusText}`);
   const data = await res.json();
-  return data.products as Array<{
-    id: number;
-    title: string;
-    variants: Array<{ id: number; title: string; price: string }>;
-  }>;
+  return data.products as ShopifyProduct[];
 }
 
 export async function createDraftOrder(
   creds: ShopifyCreds,
-  payload: any // expects { draft_order: { line_items:[], email?, note? } }
+  payload: DraftOrderPayload // expects { draft_order: { line_items:[], email?, note? } }
 ) {
   const res = await fetch(`${base(creds)}/draft_orders.json`, {
     method: "POST",

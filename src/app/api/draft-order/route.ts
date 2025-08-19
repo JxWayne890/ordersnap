@@ -1,22 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createDraftOrder, sendInvoice } from "@/lib/shopify";
+import {
+  createDraftOrder,
+  sendInvoice,
+  DraftOrderLineItem,
+  DraftOrderPayload,
+} from "@/lib/shopify";
 
 type Body = {
   storeDomain: string;
   adminToken: string;
   customerName: string;
   customerEmail: string;
-  lineItems: Array<{ variant_id: number; quantity: number; price?: number }>;
+  lineItems: DraftOrderLineItem[];
   emailSubject?: string;
   emailBody?: string;
 };
 
 export async function POST(req: NextRequest) {
   try {
-    const { storeDomain, adminToken, customerName, customerEmail, lineItems, emailSubject, emailBody } =
-      (await req.json()) as Body;
+    const {
+      storeDomain,
+      adminToken,
+      customerName,
+      customerEmail,
+      lineItems,
+      emailSubject,
+      emailBody,
+    } = (await req.json()) as Body;
 
-    const payload = {
+    const payload: DraftOrderPayload = {
       draft_order: {
         email: customerEmail,
         note: `OrderSnap for ${customerName}`,
@@ -38,7 +50,8 @@ export async function POST(req: NextRequest) {
     );
 
     return NextResponse.json({ ok: true, draftOrderId: draft_order.id, invoiceSent: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 400 });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "Unknown error";
+    return NextResponse.json({ error: msg }, { status: 400 });
   }
 }
